@@ -12,4 +12,6 @@ Nuscene provides an [official SDK](https://github.com/nutonomy/nuscenes-devkit) 
 
 As the origional author demands the dataset to be converted to their form, we have provided data conversion code under ```parse_data/```
 
-
+### sample_data caviats
+ 
+* when there are no previous or next img in sequence, the respetive token will be ""
