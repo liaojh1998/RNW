@@ -12,13 +12,13 @@ from .common import NUSCENES_ROOT
 
 
 # full size
-_FULL_SIZE = (768, 384)
+_FULL_SIZE = (384, 192)#(768, 384)
 # half size
 _HALF_SIZE = (384, 192)
 # limit of equ
 _EQU_LIMIT = 0.004
 # robotcar size
-_ROBOTCAR_SIZE = (576, 320)
+_ROBOTCAR_SIZE = _HALF_SIZE#_FULL_SIZE#(576, 320)
 
 
 #

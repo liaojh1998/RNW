@@ -1,14 +1,14 @@
 
 total_epochs: 20
-imgs_per_gpu: &b 8
-workers_per_gpu: 4
+imgs_per_gpu: &b 5
+workers_per_gpu: 8
 checkpoint_epoch_interval: 2
 
 dataset:
     type: "nuscenes"
     frame_ids: &f [0, -1, 1]
-    width: &w 768
-    height: &h 384
+    width: &w 384
+    height: &h 192
 
     nuscenes:
       weather: "day"
@@ -16,7 +16,7 @@ dataset:
       num_out_scales: 5
       gen_equ: True
       equ_limit: 0.004
-      resize: False
+      resize: True
 
 model:
   name: "mono2"

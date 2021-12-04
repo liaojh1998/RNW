@@ -7,8 +7,8 @@ ROBOTCAR_ROOT = {
     'night': '/opt/data/private/Oxford_RobotCar_Processed/2014-12-16-18-44-24/'
 }
 NUSCENES_ROOT = {
-    'sequence': '/kunw/Dataset/nuScenes/sequences/',
+    'sequence': '/home/amrl_user/tongrui/RNW/data/parsed_nuscene/mini/sequences/',
     'test_color': '/kunw/Dataset/nuScenes/test/color/',
     'test_gt': '/kunw/Dataset/nuScenes/test/gt/',
-    'split': '/kunw/Dataset/nuScenes/splits/'
+    'split': '/home/amrl_user/tongrui/RNW/data/parsed_nuscene/mini/splits/'
 }

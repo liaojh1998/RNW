@@ -23,7 +23,7 @@ class Backproject(nn.Module):
         self.pix_coords = torch.cat([self.pix_coords, self.ones], 1)
 
     def forward(self, depth, inv_K):
-        cam_points = torch.matmul(inv_K[:, :3, :3], self.pix_coords.cuda())
+        cam_points = torch.matmul(inv_K[:, :3, :3], self.pix_coords.double().cuda())
         cam_points = depth.view(self.batch_size, 1, -1) * cam_points
         cam_points = torch.cat([cam_points, self.ones.cuda()], 1)
         return cam_points
@@ -39,7 +39,17 @@ class Project(nn.Module):
         self.eps = eps
 
     def forward(self, points, K, T):
-        P = torch.matmul(K, T)[:, :3, :]
+        #print(K.size())
+        #print(T.size())
+        #exit(0)
+        #print(K.type())
+        #print(T.type())
+        #exit(0)
+        #print(points.size())
+        #print(points[:, :, 1])
+        P = torch.matmul(K, T[:, :3, :].double())[:, :3, :]
+        #print(P.size())
+        #exit(0)
         cam_points = torch.matmul(P, points)
         pix_coords = cam_points[:, :2, :] / (cam_points[:, 2, :].unsqueeze(1) + self.eps)
         pix_coords = pix_coords.view(self.batch_size, 2, self.height, self.width)

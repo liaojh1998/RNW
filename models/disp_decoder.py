@@ -61,6 +61,9 @@ class DispDecoder(nn.Module):
         # 3
         s3 = self.reduce3(f3)
         x3 = self.conv3(x4)
+        #print(x3.size())
+        #print(s3.size())
+        #exit(0)
         x3 = torch.cat([x3, s3], dim=1)
         x3 = self.leaky_relu(x3)
         x3 = self.up_conv3(x3)

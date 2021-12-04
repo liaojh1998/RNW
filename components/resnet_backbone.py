@@ -3,9 +3,9 @@ from torchvision.models import resnet18, resnet34, resnet50
 
 
 _MODEL_URLS = {
-    'resnet18': '/kunw/Models/resnet18-5c106cde.pth',
-    'resnet34': '/kunw/Models/resnet34-333f7ec4.pth',
-    'resnet50': '/kunw/Models/resnet50-19c8e357.pth'
+    'resnet18': '/home/amrl_user/tongrui/RNW/data/models/backbone/resnet18/resnet18-5c106cde.pth',
+    'resnet34': '/home/amrl_user/tongrui/RNW/data/models/backbone/resnet34/resnet34-333f7ec4.pth',
+    'resnet50': '/home/amrl_user/tongrui/RNW/data/models/backbone/resnet50/resnet50-19c8e357.pth'
 }
 
 

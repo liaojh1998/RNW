@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from datasets import build_dataset
 from models import MODELS
 
+import torch
 
 def parse_args():
     parser = ArgumentParser(description='Training with DDP.')
@@ -27,6 +28,7 @@ def parse_args():
 
 
 def main():
+    torch.set_default_dtype(torch.float32)
     # parse args
     args = parse_args()
 
@@ -62,7 +64,8 @@ def main():
                       gpus=args.gpus,
                       num_nodes=1,
                       max_epochs=cfg.total_epochs,
-                      callbacks=[checkpoint_callback])
+                      callbacks=[checkpoint_callback],
+                      auto_scale_batch_size="power")
 
     # training
     trainer.fit(model, loader)

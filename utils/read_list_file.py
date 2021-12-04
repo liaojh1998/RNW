@@ -23,7 +23,7 @@ def read_list_from_file(fn: str, items_per_line=None, separator=None, comment_ch
         return items[0] if len(items) == 1 else items
 
     # check parameters
-    assert os.path.exists(fn)
+    assert os.path.exists(fn), "{} does not exist".format(fn)
     assert (items_per_line is None) or (items_per_line > 0)
     # store result
     result = []

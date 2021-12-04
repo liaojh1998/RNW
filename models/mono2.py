@@ -63,11 +63,13 @@ class Mono2Model(LightningModule):
             cam_points = self.backproject(depth, inputs["inv_K", 0])
             pix_coords = self.project_3d(cam_points, inputs["K", 0], T)  # [b,h,w,2]
             src_img = self.get_color_input(inputs, frame_id, 0)
-            outputs[("color", frame_id, scale)] = F.grid_sample(src_img, pix_coords, padding_mode="border",
+            outputs[("color", frame_id, scale)] = F.grid_sample(src_img.double(), pix_coords, padding_mode="border",
                                                                 align_corners=False)
         return outputs
 
     def compute_reprojection_loss(self, pred, target):
+        #print(pred.size(), target.size())
+
         photometric_loss = robust_l1(pred, target).mean(1, True)
         ssim_loss = self.ssim(pred, target).mean(1, True)
         reprojection_loss = (0.85 * ssim_loss + 0.15 * photometric_loss)

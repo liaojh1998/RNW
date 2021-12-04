@@ -40,6 +40,11 @@ def parse_file_list(file_list_file, in_img_data_dir, out_img_data_dir):
         assert os.path.exists(src), "the source file does not exist"
         #print(src, dst)
         os.symlink(src, dst)
+    # write the file list to the file
+    dst = os.path.join(out_img_data_dir, "file_list.txt")
+    with open(dst, "w") as f:
+        for fn in new_img_list_file:
+            f.write(fn + "\n")
 
 def get_intrinsics(nusc, sample_data):
     """
@@ -76,9 +81,9 @@ def parse_scene(nusc, scene, in_root_data_dir, out_root_data_dir, sensor="CAM_FR
     if not is_exist:  
         # Create a new directory because it does not exist 
         os.makedirs(out_img_data_dir)
-        print("The new directory is created!")
+        print("Creating {}".format(out_img_data_dir))
     # stores the intrinsics
-    np.save(os.path.join(out_img_data_dir, "intrinsics.npy"), intrinsics)
+    np.save(os.path.join(out_img_data_dir, "intrinsic.npy"), intrinsics)
     # parse the image list
     parse_file_list(image_list, in_img_data_dir, out_img_data_dir)
 
@@ -90,21 +95,18 @@ def parse_scene(nusc, scene, in_root_data_dir, out_root_data_dir, sensor="CAM_FR
 
     #print(cam_front_sample_data["filename"])
 
-
-def main():
+def test():
     DATA_DIR = "data/nuscene/mini"
     OUT_DATA_DIR = "data/parsed_nuscene/mini"
     sensor = "CAM_FRONT"
     nusc = NuScenes(version='v1.0-mini', dataroot=DATA_DIR, verbose=True)
     for scene in nusc.scene:
-        parse_scene(nusc, scene, DATA_DIR, OUT_DATA_DIR, sensor)
-    """
-    for scene in nusc.scene:
         #print(scene)
         #print(scene["token"])
         first_sample_token = scene["first_sample_token"]
         first_sample = nusc.get('sample', first_sample_token)
-        
+        print(first_sample["data"].keys())
+        exit(0)
         #print(first_sample)
         cam_front_sample_data = nusc.get('sample_data', first_sample['data'][sensor])
         #print(cam_front_data)
@@ -116,7 +118,17 @@ def main():
         print(cam_front_sample_data["filename"])
         exit(0)
     pass
-    """
+    
+
+def main():
+    DATA_DIR = "data/nuscene/mini"
+    OUT_DATA_DIR = "data/parsed_nuscene/mini"
+    sensor = "CAM_FRONT"
+    nusc = NuScenes(version='v1.0-mini', dataroot=DATA_DIR, verbose=True)
+    for scene in nusc.scene:
+        parse_scene(nusc, scene, DATA_DIR, OUT_DATA_DIR, sensor)
+
 
 if __name__ == "__main__":
+    #test()
     main()
