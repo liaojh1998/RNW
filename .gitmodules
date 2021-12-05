@@ -1,0 +1,3 @@
+[submodule "SuperPointPretrainedNetwork"]
+	path = SuperPointPretrainedNetwork
+	url = git@github.com:TongruiLi/SuperPointPretrainedNetwork.git

@@ -65,6 +65,8 @@ class Mono2Model(LightningModule):
             src_img = self.get_color_input(inputs, frame_id, 0)
             outputs[("color", frame_id, scale)] = F.grid_sample(src_img.double(), pix_coords, padding_mode="border",
                                                                 align_corners=False)
+            # TODO: verify outputs is the predicted frame
+            # TODO: if training, compute the loss 
         return outputs
 
     def compute_reprojection_loss(self, pred, target):
