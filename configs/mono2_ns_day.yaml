@@ -1,8 +1,8 @@
 
-total_epochs: 20
-imgs_per_gpu: &b 5
+total_epochs: 40
+imgs_per_gpu: &b 6
 workers_per_gpu: 8
-checkpoint_epoch_interval: 2
+checkpoint_epoch_interval: 1
 
 dataset:
     type: "nuscenes"

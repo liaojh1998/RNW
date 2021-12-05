@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # transform
     to_tensor = ToTensor()
     # visualization
-    if args.visualization:
+    if True or args.visualization:
         visualization_dir = os.path.join(_OUT_DIR, 'visualization/')
         if not os.path.exists(visualization_dir):
             os.mkdir(visualization_dir)
@@ -74,15 +74,19 @@ if __name__ == '__main__':
             depth = depth.cpu()[0, 0, :, :].numpy()
             # append
             predictions.append(depth)
+            for d in depth:
+                print(d)
             # visualization
-            if args.visualization:
+            if True or args.visualization:
                 scaled_disp = scaled_disp.cpu()[0, 0, :, :].numpy()
                 out_fn = os.path.join(visualization_dir, '{}_vis.png'.format(osp.basename(item)))
-                save_color_disp(rgb[:, :, ::-1], scaled_disp, out_fn, max_p=95, dpi=256)
+                save_color_disp(rgb[:, :, ::-1], depth, out_fn, max_p=95, dpi=256)
 
     # stack
     predictions = np.stack(predictions, axis=0)
     # save
+    if not os.path.exists(_OUT_DIR):
+        os.mkdir(_OUT_DIR)
     np.save(os.path.join(_OUT_DIR, 'predictions.npy'), predictions, allow_pickle=False)
     # show message
     tqdm.write('Done.')

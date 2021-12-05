@@ -8,7 +8,7 @@ ROBOTCAR_ROOT = {
 }
 NUSCENES_ROOT = {
     'sequence': '/home/amrl_user/tongrui/RNW/data/parsed_nuscene/mini/sequences/',
-    'test_color': '/kunw/Dataset/nuScenes/test/color/',
-    'test_gt': '/kunw/Dataset/nuScenes/test/gt/',
+    'test_color': '/home/amrl_user/tongrui/RNW/data/parsed_nuscene/mini/test/color/',
+    'test_gt': '/home/amrl_user/tongrui/RNW/data/parsed_nuscene/mini/test/gt/',
     'split': '/home/amrl_user/tongrui/RNW/data/parsed_nuscene/mini/splits/'
 }

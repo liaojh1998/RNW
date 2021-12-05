@@ -29,7 +29,7 @@ class nuScenesSequence(Dataset):
     Oxford RobotCar data set.
     """
     def __init__(self, weather, frame_ids: (list, tuple), augment=True, down_scale=False, num_out_scales=5,
-                 gen_equ=False, equ_limit=_EQU_LIMIT, resize=False):
+                 gen_equ=False, equ_limit=_EQU_LIMIT, resize=True):
         """
         Initialize
         :param weather: day or night
@@ -41,6 +41,7 @@ class nuScenesSequence(Dataset):
         :param equ_limit: limit of equ
         :param resize: whether to resize to the same size as robotcar
         """
+        resize = True
         # set parameters
         self._root_dir = NUSCENES_ROOT['sequence']
         self._frame_ids = frame_ids

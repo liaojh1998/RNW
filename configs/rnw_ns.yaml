@@ -1,16 +1,16 @@
 
 total_epochs: 20
 imgs_per_gpu: &b 4
-workers_per_gpu: 4
-checkpoint_epoch_interval: 2
+workers_per_gpu: 8
+checkpoint_epoch_interval: 1
 
 data_link: None
 
 dataset:
   type: "multiple_nuscenes"
   frame_ids: &f [ 0, -1, 1 ]
-  width: &w 768
-  height: &h 384
+  width: &w 384
+  height: &h 192
 
   multiple_nuscenes:
     subsets:
@@ -47,9 +47,6 @@ model:
   use_equ: True
 
   automask: True
-  disp_norm: True
-
-  disparity_smoothness: 1.0e-3
 
   use_static_mask: True
   static_mask_quantile: 0.2
@@ -57,3 +54,8 @@ model:
   use_position_map: True
   G_weight: 4.0e-4
   D_weight: 4.0e-4
+  
+  disp_norm: True
+
+  disparity_smoothness: 1.0e-3
+
