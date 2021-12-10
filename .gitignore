@@ -1,2 +1,4 @@
+save_match_dir/
+tracker_outputs/
 data/
 __pycache__
