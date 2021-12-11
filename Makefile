@@ -18,7 +18,7 @@ clean_test:
 	rm -r data/parsed_nuscene/mini/test/color/*
 
 test_day:
-	python3 test_nuscenes_disp.py day mono2_ns_day checkpoints/mono2_ns_day/checkpoint_epoch\=11.ckpt
+	python3 test_nuscenes_disp.py day mono2_ns_day checkpoints/mono2_ns_day/checkpoint_epoch\=30.ckpt
 
 test_day2:
 	python3 test_nuscenes_disp.py day mono2_ns_day /robodata/tongrui/RNW/check_backup/mono2_ns_day/checkpoint_epoch\=99.ckpt

@@ -23,6 +23,27 @@ def save_color_disp(color: np.ndarray, disp: np.ndarray, fn: str, title: str = N
     plt.savefig(fn, dpi=dpi)
     plt.close()
 
+def save_color_depth(color: np.ndarray, depth: np.ndarray, fn: str, title: str = None, max_p: int = 100, dpi: int = 256,
+                    disp_cmap: str = 'magma', show_ticks=True):
+    # preprocess
+    vmax = np.percentile(depth, max_p)
+    # draw
+    fig, axes = plt.subplots(1, 2)
+    axes[0].imshow(color)
+    axes[0].set_title('Color')
+    axes[1].imshow(depth, cmap=disp_cmap, vmax=vmax)
+    axes[1].set_title('Depth')
+    if not show_ticks:
+        axes[0].set_xticks([])
+        axes[0].set_yticks([])
+        axes[1].set_xticks([])
+        axes[1].set_yticks([])
+    if title is not None:
+        fig.suptitle(title)
+    # save and close
+    plt.savefig(fn, dpi=dpi)
+    plt.close()
+
 
 def save_colors(in_color: np.ndarray, out_color: np.ndarray, fn: str, title: str = None, dpi: int = 256,
                 show_ticks=True):

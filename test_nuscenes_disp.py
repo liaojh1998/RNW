@@ -13,7 +13,7 @@ from tqdm import tqdm
 from datasets import NUSCENES_ROOT
 from models import MODELS
 from models.utils import disp_to_depth
-from utils import read_list_from_file, save_color_disp
+from utils import read_list_from_file, save_color_disp, save_color_depth
 
 # output dir
 _OUT_DIR = 'evaluation/ns_result/'
@@ -74,13 +74,11 @@ if __name__ == '__main__':
             depth = depth.cpu()[0, 0, :, :].numpy()
             # append
             predictions.append(depth)
-            for d in depth:
-                print(d)
             # visualization
             if True or args.visualization:
                 scaled_disp = scaled_disp.cpu()[0, 0, :, :].numpy()
                 out_fn = os.path.join(visualization_dir, '{}_vis.png'.format(osp.basename(item)))
-                save_color_disp(rgb[:, :, ::-1], depth, out_fn, max_p=95, dpi=256)
+                save_color_depth(rgb[:, :, ::-1], depth, out_fn, max_p=95, dpi=256)
 
     # stack
     predictions = np.stack(predictions, axis=0)
