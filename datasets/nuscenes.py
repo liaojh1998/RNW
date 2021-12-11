@@ -109,6 +109,8 @@ class nuScenesSequence(Dataset):
         # transform
         equ_hist = EqualizeHist(src_colors[0], limit=self._equ_limit)
         # process
+        # scale is used in unet, essentially in each "layer"
+        # we divide the resolution by half
         for s in range(num_scales):
             # get size
             rh, rw = h // (2 ** s), w // (2 ** s)
@@ -136,6 +138,7 @@ class nuScenesSequence(Dataset):
                 out['color_aug', fi, s] = color
                 if self._gen_equ:
                     out['color_equ', fi, s] = equ_color
+                # TODO: add in the 2d point correspondence from file
         return out
 
     def make_sequence(self, chunks: (list, tuple)):
@@ -171,6 +174,7 @@ class nuScenesSequence(Dataset):
         # get item
         item = self._sequence_items[idx]
         print(item)
+        print("Exiting")
         exit(0)
         # read data
         rgbs = [cv2.imread(os.path.join(self._root_dir, p)) for p in item['sequence']]

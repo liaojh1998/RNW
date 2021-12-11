@@ -1,4 +1,4 @@
-# Nuscene
+# Nuscene - Official SDK
 
 ## download nuscene
 
@@ -15,3 +15,9 @@ As the origional author demands the dataset to be converted to their form, we ha
 ### sample_data caviats
  
 * when there are no previous or next img in sequence, the respetive token will be ""
+
+# Nuscene - Author's code
+
+## Loading in program
+
+Author's code can be found in ```datasets/nuscenes.py``` We can see that 

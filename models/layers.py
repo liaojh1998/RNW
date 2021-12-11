@@ -39,6 +39,10 @@ class Project(nn.Module):
         self.eps = eps
 
     def forward(self, points, K, T):
+        """
+        K is the intrinsics
+        T is the 
+        """
         #print(K.size())
         #print(T.size())
         #exit(0)
