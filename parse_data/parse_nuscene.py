@@ -58,14 +58,30 @@ def get_intrinsics(nusc, sample_data):
     #print(cs_record)
     return np.array(cs_record["camera_intrinsic"])
 
+def parse_superpoint(out_img_data_dir, out_superpoint_dir):
+    cwd = os.getcwd()
+    out_img_data_dir = os.path.join(cwd, out_img_data_dir)
+    out_superpoint_dir = os.path.join(cwd, out_superpoint_dir)
+    os.system(
+        """
+        python3 SuperPointPretrainedNetwork/demo_superpoint.py\
+            {} \
+            --weights_path SuperPointPretrainedNetwork/superpoint_v1.pth \
+            --cuda \
+            --save_matches \
+            --save_match_dir={} \
+            --no_display
+        """.format(out_img_data_dir, out_superpoint_dir)
+        )
 
-def parse_scene(nusc, scene, in_root_data_dir, out_root_data_dir, sensor="CAM_FRONT"):
+def parse_scene(nusc, scene, in_root_data_dir, out_root_data_dir, out_superpoint_dir, sensor="CAM_FRONT"):
     """
     given a scene, produce the following output to the specified output directory:
     1. create a folder under out_root_data_dir/sequence/ with name of the scene token
     2. get intrinsics and store under root/sequence/videoclipnumber/intrinsic.npy
     3. get the list of image files and store under root/sequence/videoclipnumber/image_list.txt
     4. store the name of image files under root/sequence/videoclipnumber/file_list.txt
+    5. get the 2D point correspondence under superpoint_dir/videoclipnumber/img_name.p
     """
     first_sample_token = scene["first_sample_token"]
     first_sample = nusc.get('sample', first_sample_token)
@@ -86,8 +102,10 @@ def parse_scene(nusc, scene, in_root_data_dir, out_root_data_dir, sensor="CAM_FR
 
     # stores the intrinsics
     np.save(os.path.join(out_img_data_dir, "intrinsic.npy"), intrinsics)
-    # parse the image list
+    # parse the image list to file
     parse_file_list(image_list, in_img_data_dir, out_img_data_dir)
+    # parse superpoint
+    parse_superpoint(out_img_data_dir, out_superpoint_dir)
 
 def parse_test_scene(nusc_explorer, scene, cam_sensor, lidar_sensor, in_root_data_dir, out_root_data_dir, weather):
     nusc = nusc_explorer.nusc
@@ -104,8 +122,6 @@ def parse_test_scene(nusc_explorer, scene, cam_sensor, lidar_sensor, in_root_dat
         # Create a new directory because it does not exist 
         os.makedirs(out_img_data_dir)
         print("Creating {}".format(out_img_data_dir))
-    #print(out_img_data_dir)
-    #exit(0)
     # parse the image list
     parse_file_list(image_list, in_root_data_dir, out_img_data_dir, write_txt=False)
     # create the split file
@@ -203,12 +219,16 @@ def get_test_data():
     pass
 
 def get_train_data():
+    # directory where to read the raw data from nuscene
     DATA_DIR = "data/nuscene/mini"
+    # directory where to save the parsed data from nuscene
     OUT_DATA_DIR = "data/parsed_nuscene/mini"
+    # directory where to save superpoint point correspondence file
+    SUPERPOINT_DIR = "data/parsed_nuscene/mini_correspondence"
     sensor = "CAM_FRONT"
     nusc = NuScenes(version='v1.0-mini', dataroot=DATA_DIR, verbose=True)
     for scene in nusc.scene:
-        parse_scene(nusc, scene, DATA_DIR, OUT_DATA_DIR, sensor)
+        parse_scene(nusc, scene, DATA_DIR, OUT_DATA_DIR, SUPERPOINT_DIR, sensor)
 
 def main():
     #get_test_data()

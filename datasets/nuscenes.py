@@ -170,6 +170,8 @@ class nuScenesSequence(Dataset):
         """
         # get item
         item = self._sequence_items[idx]
+        print(item)
+        exit(0)
         # read data
         rgbs = [cv2.imread(os.path.join(self._root_dir, p)) for p in item['sequence']]
         intrinsic = item['k'].copy()

@@ -3,6 +3,7 @@ parse_test_img:
 	mkdir -p data/parsed_nuscene/mini/test/color
 	ln -s /home/amrl_user/tongrui/RNW/data/nuscene/mini/samples data/parsed_nuscene/mini/test/color/samples
 	ln -s /home/amrl_user/tongrui/RNW/data/nuscene/mini/sweeps data/parsed_nuscene/mini/test/color/sweeps
+
 parse_data:
 	python3 parse_data/parse_nuscene.py
 
@@ -11,6 +12,7 @@ test_ns:
 
 clean:
 	rm -r data/parsed_nuscene/mini/sequences/*
+	rm -r data/parsed_nuscene/mini_correspondence/*
 
 clean_test:
 	rm -r data/parsed_nuscene/mini/test/color/*
