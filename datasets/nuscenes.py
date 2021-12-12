@@ -6,10 +6,11 @@ import torch.nn.functional as F
 
 from torch.utils.data import Dataset
 from utils import read_list_from_file
-from transforms import ResizeWithIntrinsic, RandomHorizontalFlipWithIntrinsic, EqualizeHist, CenterCropWithIntrinsic
+from transforms import ResizeWithIntrinsic, RandomHorizontalFlipWithIntrinsic, EqualizeHist, CenterCropWithIntrinsic, map_pt_with_intrinsics
 from torchvision.transforms import ToTensor
 from .common import NUSCENES_ROOT
 
+import pickle
 
 # full size
 _FULL_SIZE = (384, 192)#(768, 384)
@@ -69,10 +70,13 @@ class nuScenesSequence(Dataset):
         # transforms
         self._to_tensor = ToTensor()
         if self._need_augment:
+            #raise NotImplementedError("Augmentation of point correspondence is not implemented")
             self._flip = RandomHorizontalFlipWithIntrinsic(0.5)
         # crop
         if self._need_resize:
-            self._crop = CenterCropWithIntrinsic(round(1.8 * self._height), self._height)
+            self._crop = None
+            print("[WARINING] Manually disabled cropping")
+            #self._crop = CenterCropWithIntrinsic(round(1.8 * self._height), self._height)
         else:
             self._crop = None
         # resize
@@ -94,14 +98,24 @@ class nuScenesSequence(Dataset):
             scene_path = os.path.join(self._root_dir, scene)
             colors = sorted(read_list_from_file(os.path.join(scene_path, 'file_list.txt'), 1))
             colors = [os.path.join(scene, color) for color in colors]
+            # read in the point correspondence here
+            # dimension is (TxNx5), where T is the frame, N is the number of points
+            point_correspondences = []
+            for c in colors:
+                fn = os.path.basename(c)[:-4] + ".p"
+                fn = os.path.join(NUSCENES_ROOT["point_correspondence"], fn)
+                with open(fn, 'rb') as f:
+                    point_correspondence = pickle.load(f)
+                    point_correspondences.append(point_correspondence)
             chunk = {
                 'colors': colors,
-                'k': np.load(os.path.join(scene_path, 'intrinsic.npy'))
+                'k': np.load(os.path.join(scene_path, 'intrinsic.npy')),
+                'ps': point_correspondences
             }
             result.append(chunk)
         return result
 
-    def pack_data(self, src_colors: dict, src_K: np.ndarray, num_scales: int):
+    def pack_data(self, src_colors: dict, src_K: np.ndarray, num_scales: int, src_pts):
         out = {}
         h, w, _ = src_colors[0].shape
         # Note: the numpy ndarray and tensor share the same memory!!!
@@ -123,22 +137,39 @@ class nuScenesSequence(Dataset):
             out['inv_K', s] = torch.inverse(K)
             # color
             for fi in self._frame_ids:
-                # get color
+                # get color and pts
                 color = src_colors[fi]
                 equ_color = equ_hist(color)
+                pt = src_pts[fi]
+                #print(pt.shape)
+                #exit()
                 # to tensor
                 color = self._to_tensor(color)
                 equ_color = self._to_tensor(equ_color)
+                pt = self._to_tensor(pt)
+                pt = pt.squeeze(0)
+                pt_prev = pt[:, [1, 2]]
+                pt_new = pt[:, [3, 4]]
                 # resize
                 if s != 0:
                     color = F.interpolate(color.unsqueeze(0), (rh, rw), mode='area').squeeze(0)
                     equ_color = F.interpolate(equ_color.unsqueeze(0), (rh, rw), mode='area').squeeze(0)
+                    pt_prev = F.interpolate(pt_prev.unsqueeze(0), (rh, rw), mode='area').squeeze(0)
+                    pt_new = F.interpolate(pt_new.unsqueeze(0), (rh, rw), mode='area').squeeze(0)
+                    # manually rescale the point correspondence
+                    pt_prev[:, 0] = torch.round(pt_prev[:, 0] * rw / w)
+                    pt_prev[:, 1] = torch.round(pt_prev[:, 1] * rh / h)
+                    pt_new[:, 0] = torch.round(pt_new[:, 0] * rw / w)
+                    pt_new[:, 1] = torch.round(pt_new[:, 1] * rh / h)
+                    pt[:, [1, 2]] = pt_prev
+                    pt[:, [3, 4]] = pt_new
                 # (name, frame_idx, scale)
                 out['color', fi, s] = color
                 out['color_aug', fi, s] = color
+                out["point_correspondence", fi, s] = pt
+                #out["pts", s] = pts
                 if self._gen_equ:
                     out['color_equ', fi, s] = equ_color
-                # TODO: add in the 2d point correspondence from file
         return out
 
     def make_sequence(self, chunks: (list, tuple)):
@@ -152,6 +183,7 @@ class nuScenesSequence(Dataset):
         # scan
         for chunk in chunks:
             fs = chunk['colors']
+            ps = chunk['ps']
             # get length
             frame_length = len(self._frame_ids)
             min_id, max_id = min(self._frame_ids), max(self._frame_ids)
@@ -161,8 +193,10 @@ class nuScenesSequence(Dataset):
             # pick sequence
             for i in range(abs(min_id), total_length - abs(max_id)):
                 items = [fs[i + fi] for fi in self._frame_ids]
-                result.append({'sequence': items, 'k': chunk['k']})
-        # return
+                # still an (T_2xNx5) array at this point, T_2 is the number of frames
+                point_correspondence = [ps[i + fi] for fi in self._frame_ids]
+                point_correspondence = np.asarray(point_correspondence)
+                result.append({'sequence': items, 'k': chunk['k'], "pts": point_correspondence})
         return result
 
     def __getitem__(self, idx):
@@ -173,28 +207,35 @@ class nuScenesSequence(Dataset):
         """
         # get item
         item = self._sequence_items[idx]
-        print(item)
-        print("Exiting")
-        exit(0)
         # read data
         rgbs = [cv2.imread(os.path.join(self._root_dir, p)) for p in item['sequence']]
         intrinsic = item['k'].copy()
+        pts = item['pts']
+        pts_result = [np.copy(x) for x in pts]
         # crop
         if self._crop is not None:
+            raise NotImplementedError()
             intrinsic, rgbs = self._crop(intrinsic, *rgbs, inplace=False, unpack=False)
         # down scale
         if self._resize is not None:
             intrinsic, rgbs = self._resize(intrinsic, *rgbs)
+            # no need to map pts here, as intrinsics is not applied at this stage
+            #pts = map_pt_with_intrinsics(pts, intrinsic)
         # augment
         if self._need_augment:
-            intrinsic, rgbs = self._flip(intrinsic, *rgbs, unpack=False)
-        # get colors
+            #raise NotImplementedError()
+            intrinsic, rgbs, pts_result = self._flip(intrinsic, *rgbs, unpack=False, pts = pts_result)
+        # get colors and pts
         colors = {}
+        pts_results = {}
         # color
         for i, fi in enumerate(self._frame_ids):
             colors[fi] = rgbs[i]
+            pts_results[fi] = pts_result[i]
+        # get point correspondence
+
         # pack
-        result = self.pack_data(colors, intrinsic, self._num_out_scales)
+        result = self.pack_data(colors, intrinsic, self._num_out_scales, pts_results)
         # return
         return result
 

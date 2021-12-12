@@ -10,5 +10,6 @@ NUSCENES_ROOT = {
     'sequence': '/home/amrl_user/tongrui/RNW/data/parsed_nuscene/mini/sequences/',
     'test_color': '/home/amrl_user/tongrui/RNW/data/parsed_nuscene/mini/test/color/',
     'test_gt': '/home/amrl_user/tongrui/RNW/data/parsed_nuscene/mini/test/gt/',
-    'split': '/home/amrl_user/tongrui/RNW/data/parsed_nuscene/mini/splits/'
+    'split': '/home/amrl_user/tongrui/RNW/data/parsed_nuscene/mini/splits/',
+    'point_correspondence':"/home/amrl_user/tongrui/RNW/data/parsed_nuscene/mini_correspondence"
 }

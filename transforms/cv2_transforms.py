@@ -16,7 +16,7 @@ class RandomCrop:
     def __init__(self, *size):
         self.w, self.h = size
 
-    def __call__(self, *imgs, inplace=False):
+    def __call__(self, *imgs, inplace=False, pts = None):
         """
         Perform random crop
         :param imgs: images to process
@@ -45,7 +45,6 @@ class RandomCrop:
             results.append(img_result)
         # handle results
         results = results if len(results) > 1 else results[0]
-        # return
         return results
 
 
@@ -201,23 +200,38 @@ class RandomHorizontalFlipWithIntrinsic:
         """
         self.p = p
 
-    def __call__(self, intrinsic, *imgs, unpack=True):
+    def __call__(self, intrinsic, *imgs, unpack=True, pts=None):
         """
         Process
         :param intrinsic: intrinsic matrix
         :param imgs: 'channel last' images to be processed
         :param unpack:
+        :param pts: (T_2xNx5) points. Note that each point is 
+            [track_id, x1, y1, x2, y2]
+            The convension is that y corresponds to height
+            and x corresponds to width
         """
         # assert
         assert len(imgs) > 0
         # store results
         img_results = []
+        pts_result = []
         # get w
         h, w, _ = imgs[0].shape
+        #print("h{}, w{}, maxh{}, maxw{}".format(h, w, max(pts[2][:, 2]), max(pts[2][:, 1])))
+        #exit(0)
         # process
         if random.random() < self.p:
             for img in imgs:
                 img_results.append(img[:, ::-1].copy())
+            # flip the x coordinate
+            for pt in pts:
+                new_x1 = w - pt[:, 1] - 1
+                new_x2 = w - pt[:, 3] - 1
+                new_pt = np.stack([pt[:, 0], new_x1, pt[:, 2], new_x2, pt[:, 4]], axis=1)
+                assert pt.shape == new_pt.shape
+                pts_result.append(new_pt)
+                
             intrinsic_result = intrinsic.copy()
             intrinsic_result[0, 2] = w - intrinsic[0, 2]
         else:
@@ -226,8 +240,13 @@ class RandomHorizontalFlipWithIntrinsic:
         # handle results
         if unpack and len(img_results) == 1:
             img_results = img_results[0]
+        if unpack and len(pts_result) == 1:
+            pts_result = pts_result[0]
         # return
-        return intrinsic_result, img_results
+        if pts is not None:
+            return intrinsic_result, img_results, pts_result
+        else:
+            return intrinsic_result, img_results
 
 
 class CenterCropWithIntrinsic:
@@ -522,3 +541,25 @@ class EqualizeHist:
     def __call__(self, img: np.ndarray):
         chs = [self._color_map[i][img[:, :, i]] for i in range(3)]
         return np.stack(chs, axis=-1)
+
+
+def map_pt_with_intrinsics(pts, intrinsics):
+    """
+    takes in points and intrinsics, map 2d points
+    according to intrinsics
+    """
+    raise NotImplementedError(" not needed, undistortion is not applied here")
+    """
+    # format for each row is  [track_id, x1, y1, x2, y2]
+    # and x2, y2 are the 2d ptsin latest (current) frame
+    x_idx = 3
+    y_idx = 4
+    # for every point, we want to undistort it
+    new_pts = []
+    for pt in pts:
+
+    frame_pts = [pt[:, [x_idx, y_idx]] for pt in pts]
+    print(len(frame_pts))
+
+    exit(0)  
+    """  
