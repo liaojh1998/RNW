@@ -215,7 +215,7 @@ class RandomHorizontalFlipWithIntrinsic:
         assert len(imgs) > 0
         # store results
         img_results = []
-        pts_result = []
+        pts_result = [] 
         # get w
         h, w, _ = imgs[0].shape
         #print("h{}, w{}, maxh{}, maxw{}".format(h, w, max(pts[2][:, 2]), max(pts[2][:, 1])))
@@ -231,12 +231,12 @@ class RandomHorizontalFlipWithIntrinsic:
                 new_pt = np.stack([pt[:, 0], new_x1, pt[:, 2], new_x2, pt[:, 4]], axis=1)
                 assert pt.shape == new_pt.shape
                 pts_result.append(new_pt)
-                
             intrinsic_result = intrinsic.copy()
             intrinsic_result[0, 2] = w - intrinsic[0, 2]
         else:
             img_results = imgs
             intrinsic_result = intrinsic
+            pts_result = pts
         # handle results
         if unpack and len(img_results) == 1:
             img_results = img_results[0]

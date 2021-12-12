@@ -154,8 +154,6 @@ class nuScenesSequence(Dataset):
                 if s != 0:
                     color = F.interpolate(color.unsqueeze(0), (rh, rw), mode='area').squeeze(0)
                     equ_color = F.interpolate(equ_color.unsqueeze(0), (rh, rw), mode='area').squeeze(0)
-                    pt_prev = F.interpolate(pt_prev.unsqueeze(0), (rh, rw), mode='area').squeeze(0)
-                    pt_new = F.interpolate(pt_new.unsqueeze(0), (rh, rw), mode='area').squeeze(0)
                     # manually rescale the point correspondence
                     pt_prev[:, 0] = torch.round(pt_prev[:, 0] * rw / w)
                     pt_prev[:, 1] = torch.round(pt_prev[:, 1] * rh / h)
@@ -232,11 +230,8 @@ class nuScenesSequence(Dataset):
         for i, fi in enumerate(self._frame_ids):
             colors[fi] = rgbs[i]
             pts_results[fi] = pts_result[i]
-        # get point correspondence
-
         # pack
         result = self.pack_data(colors, intrinsic, self._num_out_scales, pts_results)
-        # return
         return result
 
     def __len__(self):

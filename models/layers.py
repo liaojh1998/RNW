@@ -41,7 +41,7 @@ class Project(nn.Module):
     def forward(self, points, K, T):
         """
         K is the intrinsics
-        T is the 
+        T is the SE(3) transformation
         """
         #print(K.size())
         #print(T.size())
@@ -51,6 +51,9 @@ class Project(nn.Module):
         #exit(0)
         #print(points.size())
         #print(points[:, :, 1])
+        print("in projection")
+        print("K is {}\n T is {}\n".format(K, T))
+        exit(0)
         P = torch.matmul(K, T[:, :3, :].double())[:, :3, :]
         #print(P.size())
         #exit(0)

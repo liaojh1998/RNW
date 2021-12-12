@@ -4,6 +4,7 @@ import numpy as np
 import re
 import os
 from matplotlib import pyplot as plt
+import pickle
 
 def get_file_list(nusc, first_cam_sample_data):
     """
@@ -195,6 +196,30 @@ def get_depth(nusc_explorer, sample, cam_sensor, lidar_sensor):
     #visualize_ptcloud(pt_cloud)
     return pt_cloud, depth
 
+def format_superpoint_files(superpoint_dir):
+    pts = []
+    for file in os.listdir(os.path.join(os.getcwd(), superpoint_dir)):
+        fn = os.fsdecode(file)
+        fn = os.path.join(os.getcwd(), superpoint_dir, fn)
+        print(fn)
+        if fn.endswith(".p"): 
+            # print(os.path.join(directory, filename))
+            with open(fn, "rb") as f:
+                pt = pickle.load(f)
+                pts.append((fn, pt))
+    # get the max size of pts
+    max_len = max([len(pt) for fn, pt in pts])
+    print(max_len)
+    new_pts = np.zeros((len(pts), max_len, 5)).astype(np.int32)
+    for i, (fn, pt) in enumerate(pts):
+        new_pts[i, :len(pt), :] = pt
+    # save converted array to file
+    for (fn, _), pt in zip(pts, new_pts):
+        with open(fn, "wb") as f:
+            pickle.dump(pt, f)
+    return
+
+    # reschedule 
 def get_test_scene_ids():
     day_test_scene = ["fcbccedd61424f1b85dcbf8f897f9754"]
     night_test_scene = ["e233467e827140efa4b42d2b4c435855"]
@@ -227,8 +252,12 @@ def get_train_data():
     SUPERPOINT_DIR = "data/parsed_nuscene/mini_correspondence"
     sensor = "CAM_FRONT"
     nusc = NuScenes(version='v1.0-mini', dataroot=DATA_DIR, verbose=True)
+
     for scene in nusc.scene:
         parse_scene(nusc, scene, DATA_DIR, OUT_DATA_DIR, SUPERPOINT_DIR, sensor)
+    
+    # make sure all superpoint is parsed:
+    format_superpoint_files(SUPERPOINT_DIR)
 
 def main():
     #get_test_data()
