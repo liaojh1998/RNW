@@ -80,8 +80,8 @@ def evaluate():
     file_name = args.output_file_name
     if file_name is not None:
         out_dir = osp.dirname(file_name)
-        if not os.path.exists(out_dir):
-            os.mkdir(out_dir)
+        if out_dir:
+            os.makedirs(out_dir, exist_ok=True)
         with open(file_name, 'w') as fo:
             json.dump(errors, fo)
 
@@ -110,7 +110,7 @@ def read_gt():
 if __name__ == '__main__':
     args = parse_args()
     assert 0.0 < args.min_depth < 1.0
-    gt_depth = read_gt() 
+    gt_depth = read_gt()
     pred_depth = np.load(os.path.join(args.pred_dir, 'predictions.npy'))
     """
     gt: (0, 0), (2, 0), (1, 1)
