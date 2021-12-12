@@ -24,6 +24,10 @@ class DispNet(nn.Module):
     def forward(self, inputs):
         outputs = self.DepthDecoder(self.DepthEncoder(inputs['color_aug', 0, 0]))
         if self.training:
+            # also predict disp for all frame
+            for frame_id in self.opt.frame_ids[1:]:
+                outputs_new = self.DepthDecoder(self.DepthEncoder(inputs['color_aug', frame_id, 0]), frame_id)
+                outputs.update(outputs_new)
             outputs.update(self.predict_poses(inputs))
         return outputs
 

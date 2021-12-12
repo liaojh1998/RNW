@@ -40,8 +40,8 @@ class Project(nn.Module):
 
     def forward(self, points, K, T):
         """
-        K is the intrinsics
-        T is the SE(3) transformation
+        K is the intrinsics (in batch form)
+        T is the SE(3) transformation (in batch form)
         """
         #print(K.size())
         #print(T.size())
@@ -51,9 +51,11 @@ class Project(nn.Module):
         #exit(0)
         #print(points.size())
         #print(points[:, :, 1])
-        print("in projection")
-        print("K is {}\n T is {}\n".format(K, T))
-        exit(0)
+        #print("in projection")
+        #print("K is {}\n T is {}\n".format(K.shape, T[0]))
+        #exit(0)
+        #print(points[0, :, 1])
+        #exit(0)
         P = torch.matmul(K, T[:, :3, :].double())[:, :3, :]
         #print(P.size())
         #exit(0)

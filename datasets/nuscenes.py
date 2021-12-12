@@ -147,27 +147,31 @@ class nuScenesSequence(Dataset):
                 color = self._to_tensor(color)
                 equ_color = self._to_tensor(equ_color)
                 pt = self._to_tensor(pt)
+                pt = torch.clone(pt)
                 pt = pt.squeeze(0)
-                pt_prev = pt[:, [1, 2]]
-                pt_new = pt[:, [3, 4]]
+                #pt_prev = pt[:, [1, 2]]
+                #pt_new = pt[:, [3, 4]]
                 # resize
                 if s != 0:
                     color = F.interpolate(color.unsqueeze(0), (rh, rw), mode='area').squeeze(0)
                     equ_color = F.interpolate(equ_color.unsqueeze(0), (rh, rw), mode='area').squeeze(0)
                     # manually rescale the point correspondence
-                    pt_prev[:, 0] = torch.round(pt_prev[:, 0] * rw / w)
-                    pt_prev[:, 1] = torch.round(pt_prev[:, 1] * rh / h)
-                    pt_new[:, 0] = torch.round(pt_new[:, 0] * rw / w)
-                    pt_new[:, 1] = torch.round(pt_new[:, 1] * rh / h)
-                    pt[:, [1, 2]] = pt_prev
-                    pt[:, [3, 4]] = pt_new
+                    pt[:, 1] = torch.round(pt[:, 1] * rw / w)
+                    pt[:, 2] = torch.round(pt[:, 2] * rh / h)
+                    pt[:, 3] = torch.round(pt[:, 3] * rw / w)
+                    pt[:, 4] = torch.round(pt[:, 4] * rh / h)
+
+                #print(fi, s, rh/h, rw/w, pt[:10, :])
                 # (name, frame_idx, scale)
                 out['color', fi, s] = color
                 out['color_aug', fi, s] = color
                 out["point_correspondence", fi, s] = pt
+                #exit(0)
                 #out["pts", s] = pts
                 if self._gen_equ:
                     out['color_equ', fi, s] = equ_color
+        #print(out["point_correspondence", 0, 0][:10, :])
+        #exit(0)
         return out
 
     def make_sequence(self, chunks: (list, tuple)):
@@ -209,7 +213,8 @@ class nuScenesSequence(Dataset):
         rgbs = [cv2.imread(os.path.join(self._root_dir, p)) for p in item['sequence']]
         intrinsic = item['k'].copy()
         pts = item['pts']
-        pts_result = [np.copy(x) for x in pts]
+        pts_result = np.array([np.copy(x) for x in pts])
+        #print(pts_result[:, :10])
         # crop
         if self._crop is not None:
             raise NotImplementedError()
@@ -222,6 +227,7 @@ class nuScenesSequence(Dataset):
         # augment
         if self._need_augment:
             #raise NotImplementedError()
+            #pass
             intrinsic, rgbs, pts_result = self._flip(intrinsic, *rgbs, unpack=False, pts = pts_result)
         # get colors and pts
         colors = {}

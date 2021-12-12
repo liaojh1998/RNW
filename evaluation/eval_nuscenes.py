@@ -110,6 +110,11 @@ def read_gt():
 if __name__ == '__main__':
     args = parse_args()
     assert 0.0 < args.min_depth < 1.0
-    gt_depth = read_gt()
+    gt_depth = read_gt() 
     pred_depth = np.load(os.path.join(args.pred_dir, 'predictions.npy'))
+    """
+    gt: (0, 0), (2, 0), (1, 1)
+    pred: (0, 0), (1, 0), (1, 1), (2, 0).....
+    pred: (0, 0), (2, 0), (1, 1)
+    """
     evaluate()
