@@ -52,9 +52,8 @@ if __name__ == '__main__':
     to_tensor = ToTensor()
     # visualization
     if True or args.visualization:
-        visualization_dir = os.path.join(_OUT_DIR, 'visualization/')
-        if not os.path.exists(visualization_dir):
-            os.mkdir(visualization_dir)
+        visualization_dir = os.path.join(_OUT_DIR, 'visualization')
+        os.makedirs(visualization_dir, exist_ok=True)
     # no grad
     with torch.no_grad():
         # predict
