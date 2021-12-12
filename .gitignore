@@ -1,4 +1,6 @@
-save_match_dir/
-tracker_outputs/
-data/
+save_match_dir
+tracker_outputs
+evaluation
+data
 __pycache__
+checkpoints*
