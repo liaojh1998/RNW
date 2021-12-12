@@ -6,23 +6,31 @@ import os
 from matplotlib import pyplot as plt
 import pickle
 
-def get_file_list(nusc, first_cam_sample_data):
+from tqdm import tqdm
+
+
+_FULL_SIZE = (384, 192)
+
+
+def get_samples_list(nusc, first_sample_token, last_sample_token, nbr_samples):
     """
-    given data directory and video clip number, 
+    given data directory and video clip number,
     """
-    assert first_cam_sample_data["prev"] == "", "first sample data should be the first frame of the video clip"
-    cam_sample_data = first_cam_sample_data
-    image_name_list = []
-    while True:
-        # save the image file name
-        #print(cam_sample_data["filename"])
-        image_name_list.append(cam_sample_data["filename"])
-        if cam_sample_data["next"] == "":
-            break
-        cam_sample_data = nusc.get('sample_data', cam_sample_data["next"])
-    
-    #return [cam_sample_data["filename"]]
-    return image_name_list
+    sample = nusc.get('sample', first_sample_token)
+    assert sample["prev"] == "", "first sample should be the first frame of the video clip"
+    samples_list = [sample]
+    for _ in range(1, nbr_samples):
+        sample = nusc.get('sample', sample['next'])
+        samples_list.append(sample)
+    assert sample["next"] == "" and sample["token"] == last_sample_token, "did not reach last sample according to scene info"
+    return samples_list
+
+def get_files_of_samples_list(nusc, samples_list, sensor):
+    files = []
+    for sample in samples_list:
+        sample_data = nusc.get('sample_data', sample['data'][sensor])
+        files.append(sample_data['filename'])
+    return files
 
 def parse_file_list(file_list_file, in_img_data_dir, out_img_data_dir, write_txt = True):
     """
@@ -91,13 +99,15 @@ def parse_scene(nusc, scene, in_root_data_dir, out_root_data_dir, out_superpoint
     intrinsics = get_intrinsics(nusc, cam_front_sample_data)
 
     # get the list of image files
-    image_list = get_file_list(nusc, cam_front_sample_data)
+    samples_list = get_samples_list(nusc, scene['first_sample_token'],
+                                    scene['last_sample_token'], scene['nbr_samples'])
+    image_list = get_files_of_samples_list(nusc, samples_list, cam_sensor)
 
     in_img_data_dir = in_root_data_dir
     out_img_data_dir = os.path.join(out_root_data_dir, "sequences", scene["token"])
     is_exist = os.path.exists(out_img_data_dir)
-    if not is_exist:  
-        # Create a new directory because it does not exist 
+    if not is_exist:
+        # Create a new directory because it does not exist
         os.makedirs(out_img_data_dir)
         print("Creating {}".format(out_img_data_dir))
 
@@ -108,21 +118,47 @@ def parse_scene(nusc, scene, in_root_data_dir, out_root_data_dir, out_superpoint
     # parse superpoint
     parse_superpoint(out_img_data_dir, out_superpoint_dir)
 
+def parse_test_samples_depth(nusc_explorer, image_list, samples_list, cam_sensor, lidar_sensor, out_gt_data_dir):
+    for fn, sample in zip(image_list, samples_list):
+        pt_cloud, depth = get_depth(nusc_explorer, sample, cam_sensor, lidar_sensor)
+        pt_cloud = pt_cloud.T
+        depth_map = np.zeros(_FULL_SIZE)
+        counts = np.ones(_FULL_SIZE)
+        track = set()
+        for (x, y), d in zip(pt_cloud, depth):
+            x = np.round(x / 1600 * _FULL_SIZE[0]).astype(np.int32)
+            y = np.round(y / 1600 * _FULL_SIZE[1]).astype(np.int32)
+            if x == _FULL_SIZE[0]:
+                x -= 1
+            if y == _FULL_SIZE[1]:
+                y -= 1
+            depth_map[x][y] += d
+            if (x, y) in track:
+                counts[x][y] += 1
+            else:
+                track.add((x, y))
+        depth_map /= counts
+        fn = fn[:-4] + ".npy"
+        fn = os.path.join(out_gt_data_dir, fn)
+        dn = os.path.dirname(fn)
+        os.makedirs(dn, exist_ok=True)
+        np.save(fn, depth_map)
+
 def parse_test_scene(nusc_explorer, scene, cam_sensor, lidar_sensor, in_root_data_dir, out_root_data_dir, weather):
     nusc = nusc_explorer.nusc
-    first_sample_token = scene["first_sample_token"]
-    first_sample = nusc.get('sample', first_sample_token)
-    # gets 2d pixel level depth
-    # TODO: loop over all the samples
-    # pt_cloud, depth = get_depth(nusc_explorer, first_sample, sensor, lidar_sensor)
     # get list of camera image corresponding to the scene
-    image_list = get_file_list(nusc, nusc.get('sample_data', first_sample['data'][cam_sensor]))
+    samples_list = get_samples_list(nusc, scene['first_sample_token'],
+                                    scene['last_sample_token'], scene['nbr_samples'])
+    image_list = get_files_of_samples_list(nusc, samples_list, cam_sensor)
+    # save files split
     out_img_data_dir = os.path.join(out_root_data_dir, "test", "color")
-    is_exist = os.path.exists(out_img_data_dir)
-    if not is_exist:  
-        # Create a new directory because it does not exist 
-        os.makedirs(out_img_data_dir)
-        print("Creating {}".format(out_img_data_dir))
+    out_gt_data_dir = os.path.join(out_root_data_dir, "test", "gt")
+    print("Creating {}".format(out_img_data_dir))
+    os.makedirs(out_img_data_dir, exist_ok=True)
+    print("Creating {}".format(out_gt_data_dir))
+    os.makedirs(out_gt_data_dir, exist_ok=True)
+    # get 2d pixel level depth
+    parse_test_samples_depth(nusc_explorer, image_list, samples_list, cam_sensor, lidar_sensor, out_gt_data_dir)
     # parse the image list
     parse_file_list(image_list, in_root_data_dir, out_img_data_dir, write_txt=False)
     # create the split file
@@ -157,7 +193,7 @@ def test():
         print(cam_front_sample_data["filename"])
         exit(0)
     pass
-    
+
 
 def visualize_ptcloud(pt_cloud, h=1600, w=900):
     scale = 10
@@ -179,20 +215,20 @@ def visualize_ptcloud(pt_cloud, h=1600, w=900):
 
 def get_depth(nusc_explorer, sample, cam_sensor, lidar_sensor):
     """
-    get the depth map from the sample data and lidar
+    get the depth map from the samples data and lidar
     """
-    cam_sample_data = nusc_explorer.nusc.get('sample_data', sample['data'][cam_sensor])
-    lidar_sample_data = nusc_explorer.nusc.get('sample_data', sample['data'][lidar_sensor])
     # pt cloud represents the 2d coordinate
     # depth represents the depth of the point
     # img is the camera image
-    pt_cloud, depth, img =  nusc_explorer.map_pointcloud_to_image(lidar_sample_data["token"], cam_sample_data["token"])
-    img.save("test.png")
-    pt_cloud = np.round(pt_cloud)
-    pt_cloud = pt_cloud[:2, :].astype(np.int32)
+    lidar_sample = nusc_explorer.nusc.get('sample_data', sample['data'][lidar_sensor])
+    cam_sample = nusc_explorer.nusc.get('sample_data', sample['data'][cam_sensor])
+    pt_cloud, depth, img = nusc_explorer.map_pointcloud_to_image(lidar_sample["token"], cam_sample["token"])
+    #img.save("test.png")
+    #pt_cloud = np.round(pt_cloud)
+    pt_cloud = pt_cloud[:2, :]
     #pt_cloud[2, :] = depth
     #print(pt_cloud[:, 0])
-    #print(depth.shape)    
+    #print(depth.shape)
     #visualize_ptcloud(pt_cloud)
     return pt_cloud, depth
 
@@ -202,7 +238,7 @@ def format_superpoint_files(superpoint_dir):
         fn = os.fsdecode(file)
         fn = os.path.join(os.getcwd(), superpoint_dir, fn)
         print(fn)
-        if fn.endswith(".p"): 
+        if fn.endswith(".p"):
             # print(os.path.join(directory, filename))
             with open(fn, "rb") as f:
                 pt = pickle.load(f)
@@ -219,7 +255,7 @@ def format_superpoint_files(superpoint_dir):
             pickle.dump(pt, f)
     return
 
-    # reschedule 
+    # reschedule
 def get_test_scene_ids():
     day_test_scene = ["fcbccedd61424f1b85dcbf8f897f9754"]
     night_test_scene = ["e233467e827140efa4b42d2b4c435855"]
@@ -233,15 +269,14 @@ def get_test_data():
     nusc = NuScenes(version='v1.0-mini', dataroot=DATA_DIR, verbose=True)
     test_scene_ids = get_test_scene_ids()
     nusc_explorer = NuScenesExplorer(nusc)
-    for scene_token in test_scene_ids["day_scene"]:  
+    for scene_token in tqdm(test_scene_ids["day_scene"]):
         weather = "day"
         scene = nusc.get('scene', scene_token)
         parse_test_scene(nusc_explorer, scene, cam_sensor, lidar_sensor, DATA_DIR, OUT_DATA_DIR, weather)
-    for scene_token in test_scene_ids["night_scene"]:  
+    for scene_token in tqdm(test_scene_ids["night_scene"]):
         weather = "night"
         scene = nusc.get('scene', scene_token)
         parse_test_scene(nusc_explorer, scene, cam_sensor, lidar_sensor, DATA_DIR, OUT_DATA_DIR, weather)
-    pass
 
 def get_train_data():
     # directory where to read the raw data from nuscene
@@ -255,7 +290,7 @@ def get_train_data():
 
     for scene in nusc.scene:
         parse_scene(nusc, scene, DATA_DIR, OUT_DATA_DIR, SUPERPOINT_DIR, sensor)
-    
+
     # make sure all superpoint is parsed:
     format_superpoint_files(SUPERPOINT_DIR)
 
