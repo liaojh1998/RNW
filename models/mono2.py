@@ -137,7 +137,7 @@ class Mono2Model(LightningModule):
         
         #print(pts3d_0.requires_grad)
         epipolar_losses = []
-
+        item_counts = 0
 
         
         for i, frame_id in enumerate(self.opt.frame_ids[1:]):
@@ -148,7 +148,7 @@ class Mono2Model(LightningModule):
             # get and undistort the points
             pt1 = inputs[("point_correspondence", frame_id, 0)]
             pts3d_1 = self.undistort_point(K, pt1, depth1)
-            # preallocate
+            # preallocate and compute count
             batch_size = len(pt1)
             max_track_size = 0
             for b in range(batch_size):
@@ -158,6 +158,8 @@ class Mono2Model(LightningModule):
                     if track_id != 0 and track_id in pt0_idx[b]:
                         counter += 1
                 max_track_size = max(max_track_size, counter)
+                if counter != 0:
+                    item_counts += counter
             
             # filter the points
             pts3d_0_filtered = torch.zeros((batch_size, max_track_size, 3)).to(pt0.get_device())
@@ -208,12 +210,13 @@ class Mono2Model(LightningModule):
                 epipolar_losses.append(loss.view(-1))
                 """
         result_loss = torch.zeros(1).to(pt0.get_device())
+        #assert len(epipolar_losses) == len(item_counts), "len epi {}, len item{}".format(len(epipolar_losses), len(item_counts))
         for l in epipolar_losses:
             result_loss += l.sum()
         #epipolar_losses = torch.as_tensor(epipolar_losses).to(pt0.get_device())
         #print(result_loss.requires_grad)
         #print(result_loss)
-        return result_loss
+        return (1e-9)*result_loss/item_counts
             
             
         """
@@ -289,8 +292,8 @@ class Mono2Model(LightningModule):
             """
             epipolar loss
             """
-            
-            loss_dict[("epipolar_loss", scale)] = self.compute_epipolar_loss(inputs, outputs, scale)
+            if True:
+                loss_dict[("epipolar_loss", scale)] = self.compute_epipolar_loss(inputs, outputs, scale)
 
             """
             disp mean normalization
@@ -305,5 +308,6 @@ class Mono2Model(LightningModule):
             smooth_loss = get_smooth_loss(disp, self.get_color_input(inputs, 0, scale))
             loss_dict[('smooth_loss', scale)] = self.opt.disparity_smoothness * smooth_loss / (2 ** scale) / len(
                 self.opt.scales)
-
+        #for k, v in loss_dict.items():
+        #    print("k is {}, v is {}".format(k, v))
         return loss_dict
