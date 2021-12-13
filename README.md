@@ -3,6 +3,10 @@ Kun Wang, Zhenyu Zhang, Zhiqiang Yan, Xiang Li, Baobei Xu, Jun Li and Jian Yang
 
 PCA Lab, Nanjing University of Science and Technology; Tencent YouTu Lab; Hikvision Research Institute
 
+Improved by Tongrui Li and Jay Liao.
+
+For information about training and datasets, please email jhliao (at) utexas (dot) edu.
+
 ## Introduction
 
 This is the official repository for *Regularizing Nighttime Weirdness: Efficient Self-supervised Monocular Depth Estimation in the Dark*. You can find our paper at [arxiv](https://arxiv.org/abs/2108.03830). In this repository, we release the training and testing code, as well as the data split files of RobotCar-Night and nuScenes-Night.
